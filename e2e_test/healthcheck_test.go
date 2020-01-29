@@ -1,10 +1,11 @@
 package e2e_test
 
 import (
-	"github.com/stretchr/testify/suite"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
 )
 
 type HealthcheckSuite struct {
@@ -24,5 +25,5 @@ func (s *HealthcheckSuite) TestHealthyService() {
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	actBody := string(bytes)
 
-	s.JSONEq(`{"status": "OK", "errors": []"}`, actBody)
+	s.JSONEq(`{"status": "OK", "errors": []}`, actBody)
 }
