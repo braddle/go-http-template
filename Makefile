@@ -13,4 +13,4 @@ docker_build_test:
 	docker build . -t template_test --target=test
 
 docker_run:
-	docker run template
+	docker run --publish 8080:8080 template
