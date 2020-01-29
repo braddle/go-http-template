@@ -2,6 +2,7 @@ package app
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/braddle/go-http-template/rest"
 	"github.com/gorilla/mux"
@@ -17,6 +18,17 @@ func (a *App) init() {
 
 func (a *App) getHealthCheckHandle() http.Handler {
 	return rest.HealthCheck{}
+}
+
+func (a *App) Run(host string) error {
+	srv := http.Server{
+		Addr:         host,
+		Handler:      a.r,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+	}
+
+	return srv.ListenAndServe()
 }
 
 func New(h *mux.Router) *App {
