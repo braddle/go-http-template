@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/braddle/go-http-template/accesslog"
+	"github.com/braddle/go-http-template/clock"
 
 	"github.com/braddle/go-http-template/rest"
 	"github.com/gorilla/mux"
@@ -22,7 +23,8 @@ func New(r *mux.Router) *App {
 }
 
 func (a *App) init() {
-	a.r.Use(accesslog.Logger)
+	al := accesslog.New(clock.New())
+	a.r.Use(al.Logger)
 
 	a.r.Handle("/healthcheck", a.getHealthCheckHandle()).Methods(http.MethodGet)
 	a.r.NotFoundHandler = a.r.NewRoute().Handler(a.getNotFoundHandle()).GetHandler()
