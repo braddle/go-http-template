@@ -1,4 +1,4 @@
-name: Service Template Check
+name: Test
 
 on: [push]
 
