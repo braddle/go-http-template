@@ -1,6 +1,6 @@
 test: docker_build_test
 	docker-compose up -d
-	docker-compose exec http go test ./...
+	docker-compose exec -T http go test ./...
 	docker-compose down
 
 unit_test:
