@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/braddle/go-http-template/accesslog"
+
 	"github.com/braddle/go-http-template/rest"
 	"github.com/gorilla/mux"
 )
@@ -12,12 +14,18 @@ type App struct {
 	r *mux.Router
 }
 
-func (a *App) init() {
-	a.r.Handle("/healthcheck", a.getHealthCheckHandle()).Methods(http.MethodGet)
+func New(r *mux.Router) *App {
+	a := &App{r: r}
+	a.init()
+
+	return a
 }
 
-func (a *App) getHealthCheckHandle() http.Handler {
-	return rest.HealthCheck{}
+func (a *App) init() {
+	a.r.Use(accesslog.Logger)
+
+	a.r.Handle("/healthcheck", a.getHealthCheckHandle()).Methods(http.MethodGet)
+	a.r.NotFoundHandler = a.r.NewRoute().Handler(a.getNotFoundHandle()).GetHandler()
 }
 
 func (a *App) Run(host string) error {
@@ -31,12 +39,10 @@ func (a *App) Run(host string) error {
 	return srv.ListenAndServe()
 }
 
-func New(h *mux.Router) *App {
-	a := &App{
-		r: h,
-	}
+func (a *App) getHealthCheckHandle() http.Handler {
+	return rest.HealthCheck{}
+}
 
-	a.init()
-
-	return a
+func (a *App) getNotFoundHandle() http.Handler {
+	return rest.NotFound{}
 }

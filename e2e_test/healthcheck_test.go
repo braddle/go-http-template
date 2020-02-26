@@ -8,15 +8,15 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type HealthcheckSuite struct {
+type HealthCheckSuite struct {
 	suite.Suite
 }
 
 func TestHealthcheckSuite(t *testing.T) {
-	suite.Run(t, new(HealthcheckSuite))
+	suite.Run(t, new(HealthCheckSuite))
 }
 
-func (s *HealthcheckSuite) TestHealthyService() {
+func (s *HealthCheckSuite) TestHealthyService() {
 	resp, err := http.Get("http://localhost:8080/healthcheck")
 
 	s.Require().NoError(err)
