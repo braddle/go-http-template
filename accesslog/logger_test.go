@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/braddle/go-http-template/clock"
 
 	"github.com/braddle/go-http-template/accesslog"
 
@@ -24,9 +27,11 @@ func TestLoggerSuite(t *testing.T) {
 }
 
 const (
-	Content   = "This is the repose body"
-	url       = "/people/123456"
-	UserAgent = "Braddle_Client/0.1"
+	ResponseContent = "This is the repose body"
+	url             = "/people/123456"
+	UserAgent       = "Braddle_Client/0.1"
+	remoteAddress   = "192.169.10.10"
+	requestContent  = "This is a test, oh yes this is a test!"
 )
 
 func (s *LoggerSuite) TestAccessLogging() {
@@ -34,15 +39,21 @@ func (s *LoggerSuite) TestAccessLogging() {
 	logrus.SetOutput(logBuf)
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
+	t := time.Date(1999, 12, 31, 23, 59, 59, 0, time.UTC)
+	al := accesslog.New(clock.Fake(t))
+
 	r := mux.NewRouter()
 	r.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(time.Second)
 		w.WriteHeader(http.StatusTeapot)
-		w.Write([]byte(Content))
+		w.Write([]byte(ResponseContent))
 	})
-	r.Use(accesslog.Logger)
+	r.Use(al.Logger)
 
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	body := bytes.NewBufferString(requestContent)
+	req, _ := http.NewRequest(http.MethodPost, url, body)
 	req.Header.Set("User-Agent", UserAgent)
+	req.RemoteAddr = remoteAddress
 	r.ServeHTTP(httptest.NewRecorder(), req)
 
 	access := make(map[string]interface{})
@@ -51,12 +62,18 @@ func (s *LoggerSuite) TestAccessLogging() {
 
 	json.Unmarshal(sc.Bytes(), &access)
 
+	s.Equal("http_access", access["type"])
+
 	// Request
-	s.Equal(url, access["request"].(string))
-	s.Equal(http.MethodGet, access["method"].(string))
-	s.Equal(UserAgent, access["user_agent"].(string))
+	s.Equal(url, access["request"])
+	s.Equal(http.MethodPost, access["method"])
+	s.Equal(UserAgent, access["http_user_agent"])
+	s.Equal(remoteAddress, access["remote_addr"])
+	s.Equal(len(requestContent), int(access["body_bytes_sent"].(float64)))
 
 	// Response
 	s.Equal(http.StatusTeapot, int(access["status"].(float64)))
-	s.Equal(len(Content), int(access["size"].(float64)))
+	s.Equal(len(ResponseContent), int(access["size"].(float64)))
+	s.Equal(t.Format("02/Jan/2006 03:04:05 -0700"), access["time_local"])
+	s.Greater(float64(1), access["request_time"].(float64))
 }
